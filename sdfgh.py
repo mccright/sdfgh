@@ -1,19 +1,31 @@
-import tkinter, tkinter.messagebox, tkinter.simpledialog, tkinter.scrolledtext, Crypto.Random, Crypto.Protocol.KDF, Crypto.Cipher.AES, os
+import tkinter
+import tkinter.messagebox
+import tkinter.simpledialog
+import tkinter.scrolledtext
+import Crypto.Random
+import Crypto.Protocol.KDF
+import Crypto.Cipher.AES
+import os
+import sys
+
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
 def cipherAES_GCM(pwd, nonce):
     key = Crypto.Protocol.KDF.PBKDF2(pwd, nonce, count=100000)
     return Crypto.Cipher.AES.new(key, Crypto.Cipher.AES.MODE_GCM, nonce=nonce, mac_len=16)
+    
 def save(e):
     global pwd
-    if 'pwd' not in globals(): 
+    if 'pwd' not in globals():
         pwd = tkinter.simpledialog.askstring('sdfgh', 'Password:', show="*").encode()
     nonce = Crypto.Random.new().read(16)
     ciphertext = nonce + b''.join(cipherAES_GCM(pwd, nonce).encrypt_and_digest(text.get("1.0", 'end-1c').encode()))
     with open('sdfgh.dat', 'wb') as f:
         f.write(ciphertext)
     text.edit_modified(False)
+    
 def load(root):
-    global pwd    
+    global pwd
     try:
         with open('sdfgh.dat', 'rb') as f:
             s = f.read()
@@ -25,15 +37,17 @@ def load(root):
                 s = cipherAES_GCM(pwd, nonce).decrypt_and_verify(ciphertext, tag).decode()
                 break
             except AttributeError:
-                exit()
+                sys.exit()
             except ValueError:  # wrong password, let's try again
                 pass
     except FileNotFoundError:  # new file
         s = "Welcome! This is a new file. Basic documentation:\n* Save with CTRL+S\n* Quit with CTRL+W or ALT+F4\n* Find a pattern with CTRL+F or F3"
     return s
+    
 def close(e=None):
     if not text.edit_modified() or tkinter.messagebox.askokcancel('sdfgh', "Some modifications have not been saved, do you really want to quit?", default=tkinter.messagebox.CANCEL):
         root.destroy()
+        
 def find(e, findnext=False):
     global query
     if not findnext or 'query' not in globals():
@@ -46,6 +60,7 @@ def find(e, findnext=False):
         text.mark_set("insert", pos)
         text.see("insert")
     text.focus()
+    
 if __name__ == '__main__':
     root = tkinter.Tk('sdfgh')
     root.title('sdfgh')
